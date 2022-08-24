@@ -1,22 +1,42 @@
+from telegram.error import TelegramError
+from requests.exceptions import ConnectionError
+
+
 class ResponseException(Exception):
-    """Errors in responses."""
+    """Ошибка запроса."""
+
+    def __init__(self):
+        """Базовый супер-класс."""
+        super().__init__()
+
+
+class BotException(Exception):
+    """Ошибки работы бота."""
+
+    def __init__(self):
+        """Базовый супер-класс."""
+        super().__init__()
+
+
+class TelegramErrorException(TelegramError):
+    """Ошибка запроса к Telegram."""
 
     pass
 
 
-class BotRunningException(Exception):
-    """Errors in Bot's running."""
+class ApiConnectionError(ConnectionError):
+    """Ошибка запроса к API."""
 
     pass
 
 
-class APIResponseException(ResponseException):
-    """An incorrect API response."""
+class ResponseApiTypeError(TypeError):
+    """Ошибка ответа от API."""
 
     pass
 
 
-class SendMessageException(BotRunningException):
-    """Error while sending message."""
+class ParseKeyError(KeyError):
+    """Ошибка ответа от API."""
 
     pass
