@@ -28,15 +28,7 @@ HOMEWORK_STATUSES = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.'
 }
 
-logging.basicConfig(
-    format='%(asctime)s, %(levelname)s, %(message)s, %(name)s',
-    level=logging.INFO,
-    filename='homework.log', filemode='w'
-)
-
 logger = logging.getLogger(__name__)
-handler = logging.StreamHandler()
-logger.addHandler(handler)
 
 
 def send_message(bot, message):
@@ -44,7 +36,7 @@ def send_message(bot, message):
     try:
         logger.info('Sending message to Telegram chat')
         bot.send_message(TELEGRAM_CHAT_ID, message)
-    except exceptions.TelegramErrorException as error:
+    except telegram.error.TelegramError as error:
         raise exceptions.BotException(
             f'Sending message failure: {error}'
         )
@@ -59,7 +51,7 @@ def get_api_answer(current_timestamp):
         homework_status = requests.get(
             ENDPOINT, headers=HEADERS, params=params
         )
-    except exceptions.ApiConnectionError as error:
+    except ConnectionError as error:
         raise exceptions.ResponseException(
             f'Getting API answer failure: {error}'
         )
@@ -89,7 +81,7 @@ def parse_status(homework):
     """Извлечение статус домашней работы."""
     logger.info('Parsing status of homework')
     try:
-        homework_name = homework.get('homework_name')
+        homework_name = homework['homework_name']
     except exceptions.ParseKeyError as error:
         raise exceptions.ParseKeyError(
             f'Parsing key "homework_name" failure: {error}'
@@ -114,9 +106,8 @@ def check_tokens():
 
 def main():
     """Основная логика работы программы."""
-    logger.debug('Working of main code')
-    status_upd = {}
-    error_message = ''
+    status_upd = {'name': '', 'state': ''}
+    homework_status = {'name': '', 'state': ''}
     if not check_tokens():
         logger.critical('Checking tokens error')
         sys.exit('Checking tokens erro')
@@ -127,22 +118,30 @@ def main():
     while True:
         try:
             response = get_api_answer(current_timestamp)
-            homeworks = check_response(response)
+            homeworks = check_response(response)[0]
+            message = parse_status(homeworks)
             current_timestamp = response.get('current_date')
-            homework_status = homeworks[0].get('status')
+            homework_status[response.get('homework_name')] = response.get(
+                'status')
             if homework_status != status_upd and homework_status is not None:
                 status_upd = homework_status
-                send_message(bot, parse_status(homeworks[0]))
+                send_message(bot, message)
             else:
                 logger.debug('There is not update status')
-        except Exception as error:
-            logger.error(error)
-            message = f'Main code: {error}'
-            if message != error_message:
-                send_message(bot, message)
-                error_message = message
+        except exceptions.ResponseException as error:
+            raise exceptions.ResponseException(
+                f'Getting API answer failure: {error}'
+            )
         time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        format='%(asctime)s, %(levelname)s, %(message)s, %(name)s',
+        level=logging.INFO,
+        filename='homework.log', filemode='w'
+    )
+    handler = logging.StreamHandler()
+    logger.addHandler(handler)
+    logger.debug('Working of main code')
     main()
