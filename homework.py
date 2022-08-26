@@ -37,7 +37,7 @@ def send_message(bot, message):
         logger.info('Sending message to Telegram chat')
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.error.TelegramError as error:
-        raise exceptions.BotException(
+        raise exceptions.SendingError(
             f'Sending message failure: {error}'
         )
 
@@ -52,11 +52,11 @@ def get_api_answer(current_timestamp):
             ENDPOINT, headers=HEADERS, params=params
         )
     except ConnectionError as error:
-        raise exceptions.ResponseException(
+        raise exceptions.NotSendingError(
             f'Getting API answer failure: {error}'
         )
     if homework_status.status_code != HTTPStatus.OK:
-        raise exceptions.ResponseException(
+        raise exceptions.NotSendingError(
             f'API answer is not 200: {homework_status.status_code}')
     homework = homework_status.json()
     return homework
@@ -108,6 +108,7 @@ def main():
     """Основная логика работы программы."""
     status_upd = {'name': '', 'state': ''}
     homework_status = {'name': '', 'state': ''}
+    error_message = ''
     if not check_tokens():
         logger.critical('Checking tokens error')
         sys.exit('Checking tokens erro')
@@ -128,10 +129,12 @@ def main():
                 send_message(bot, message)
             else:
                 logger.debug('There is not update status')
-        except exceptions.ResponseException as error:
-            raise exceptions.ResponseException(
-                f'Getting API answer failure: {error}'
-            )
+        except exceptions.NotSendingError as error:
+            logger.error(error)
+            message = f'Main code: {error}'
+            if message != error_message:
+                send_message(bot, message)
+                error_message = message
         time.sleep(RETRY_TIME)
 
 

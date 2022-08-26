@@ -1,10 +1,22 @@
-class ResponseException(Exception):
+class SendingError(Exception):
+    """Base class for Bot errors."""
+
+    pass
+
+
+class NotSendingError(Exception):
+    """Base class for Other errors."""
+
+    pass
+
+
+class ResponseException(NotSendingError):
     """Ошибка запроса."""
 
     pass
 
 
-class BotException(Exception):
+class BotException(SendingError):
     """Ошибки работы бота."""
 
     pass
