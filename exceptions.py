@@ -1,11 +1,11 @@
 class SendingError(Exception):
-    """Base class for Bot errors."""
+    """Базовый класс для ошибок Бота."""
 
     pass
 
 
 class NotSendingError(Exception):
-    """Base class for Other errors."""
+    """Базовый класс для прочих ошибок."""
 
     pass
 
@@ -22,13 +22,13 @@ class BotException(SendingError):
     pass
 
 
-class ResponseApiTypeError(TypeError):
+class ResponseApiTypeError(TypeError, NotSendingError):
     """Ошибка ответа от API."""
 
     pass
 
 
-class ParseKeyError(KeyError):
+class ParseKeyError(KeyError, NotSendingError):
     """Ошибка ответа от API."""
 
     pass

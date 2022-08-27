@@ -37,7 +37,7 @@ def send_message(bot, message):
         logger.info('Sending message to Telegram chat')
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.error.TelegramError as error:
-        raise exceptions.SendingError(
+        raise exceptions.BotException(
             f'Sending message failure: {error}'
         )
 
@@ -52,7 +52,7 @@ def get_api_answer(current_timestamp):
             ENDPOINT, headers=HEADERS, params=params
         )
     except ConnectionError as error:
-        raise exceptions.NotSendingError(
+        raise exceptions.ResponseException(
             f'Getting API answer failure: {error}'
         )
     if homework_status.status_code != HTTPStatus.OK:
@@ -82,12 +82,12 @@ def parse_status(homework):
     logger.info('Parsing status of homework')
     try:
         homework_name = homework['homework_name']
-    except exceptions.ParseKeyError as error:
+    except KeyError as error:
         raise exceptions.ParseKeyError(
             f'Parsing key "homework_name" failure: {error}'
         )
     homework_status = homework.get('status')
-    verdict = HOMEWORK_STATUSES[homework_status]
+    verdict = HOMEWORK_STATUSES.get(homework_status)
     if verdict is None:
         raise exceptions.ParseKeyError('Unknown homework status')
     return (
@@ -135,7 +135,8 @@ def main():
             if message != error_message:
                 send_message(bot, message)
                 error_message = message
-        time.sleep(RETRY_TIME)
+        finally:
+            time.sleep(RETRY_TIME)
 
 
 if __name__ == '__main__':
