@@ -129,6 +129,8 @@ def main():
                 send_message(bot, message)
             else:
                 logger.debug('There is not update status')
+        except exceptions.BotException as error:
+            logger.error(error)
         except exceptions.NotSendingError as error:
             logger.error(error)
             message = f'Main code: {error}'
